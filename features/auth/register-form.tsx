@@ -1,5 +1,6 @@
 "use client";
 
+import type { Route } from "next";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
@@ -55,7 +56,7 @@ export function RegisterForm() {
         return;
       }
 
-      router.push(result.data.redirectTo);
+      router.push(result.data.redirectTo as Route);
       router.refresh();
     } catch {
       setError("Network error. Please try again.");
