@@ -4,7 +4,7 @@ import { AppShell } from "@/components/layouts/app-shell";
 
 const nav = [
   { href: "/children", label: "Children" },
-  { href: "/children/child-1", label: "Performance" }
+  { href: "/children/child-1" as Route, label: "Performance" }
 ] satisfies Array<{ href: Route; label: string }>;
 
 export default function ParentLayout({
