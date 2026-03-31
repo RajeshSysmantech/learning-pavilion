@@ -5,14 +5,14 @@ import { getLeaderboardPeriod } from "@/server/services/leaderboard-service";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const module =
+  const leaderboardModule =
     (searchParams.get("module") as LeaderboardModule | null) ?? LeaderboardModule.OVERALL;
   const window =
     (searchParams.get("window") as LeaderboardWindow | null) ?? LeaderboardWindow.DAILY;
   const { start } = getLeaderboardPeriod(window);
 
   const leaderboard = await prisma.leaderboard.findFirst({
-    where: { module, window, periodStart: start },
+    where: { module: leaderboardModule, window, periodStart: start },
     include: {
       entries: {
         include: {
