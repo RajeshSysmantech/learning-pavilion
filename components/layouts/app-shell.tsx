@@ -1,10 +1,11 @@
 import type { ReactNode } from "react";
+import type { Route } from "next";
 import { AppNav } from "@/components/layouts/app-nav";
 import { LogoutButton } from "@/features/auth/logout-button";
 import { getServerSession } from "@/server/auth/session";
 
 type NavItem = {
-  href: string;
+  href: Route;
   label: string;
 };
 
