@@ -1,3 +1,4 @@
+import type { Route } from "next";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { Card } from "@/components/ui/card";
@@ -9,7 +10,7 @@ export function ModuleCard({
 }: {
   title: string;
   description: string;
-  href: string;
+  href: Route;
 }) {
   return (
     <Link href={href}>
