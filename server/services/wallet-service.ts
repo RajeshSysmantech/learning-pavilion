@@ -48,7 +48,9 @@ async function createLedgerEntryWithClient(
       balanceAfter,
       relatedType: input.relatedType,
       relatedId: input.relatedId,
-      metadata: input.metadata
+      ...(input.metadata === undefined || input.metadata === null
+        ? {}
+        : { metadata: input.metadata })
     }
   });
 
