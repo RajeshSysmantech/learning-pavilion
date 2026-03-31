@@ -1,0 +1,2 @@
+import { AdminModulePage } from "@/components/admin/admin-module-page";
+export default function Page() { return <AdminModulePage title="Settings" description="Configure platform flags, reward logic, streak rules, and operational defaults." columns={["Setting","Value","Scope"]} rows={[["allowLoginOnlyStreak","false","Gamification"],["defaultLanguage","en","Platform"],["supportEmail","support@learningpavilion.app","Platform"]]} />; }

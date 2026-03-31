@@ -1,0 +1,2 @@
+import { AdminModulePage } from "@/components/admin/admin-module-page";
+export default function Page() { return <AdminModulePage title="Announcements" description="Publish platform-wide news, offers, and seasonal campaign banners." columns={["Announcement","Audience","Publish Date","Status"]} rows={[["Summer Sprint","All","2026-04-05","Scheduled"],["Free 1 Year with HP Laptop","Public","2026-03-31","Published"]]} />; }

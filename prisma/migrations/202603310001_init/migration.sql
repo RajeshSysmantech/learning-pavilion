@@ -1,0 +1,4 @@
+-- Placeholder migration.
+-- Generate the actual SQL with Prisma after dependencies are installed:
+--   npm install
+--   npx prisma migrate dev --name init

@@ -1,0 +1,681 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  STUDENT
+  PARENT
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum UserStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+  ARCHIVED
+}
+
+enum WalletEntryType {
+  COIN
+  XP
+}
+
+enum WalletDirection {
+  CREDIT
+  DEBIT
+}
+
+enum WalletReason {
+  QUIZ_REWARD
+  TYPING_REWARD
+  GAME_REWARD
+  STREAK_BONUS
+  REWARD_REDEMPTION
+  SUBSCRIPTION_PURCHASE
+  COUPON_ADJUSTMENT
+  ADMIN_ADJUSTMENT
+}
+
+enum AttemptStatus {
+  IN_PROGRESS
+  SUBMITTED
+  ABANDONED
+}
+
+enum LeaderboardWindow {
+  DAILY
+  WEEKLY
+  MONTHLY
+  ALL_TIME
+}
+
+enum LeaderboardModule {
+  QUIZ
+  TYPING
+  GAME
+  OVERALL
+}
+
+enum RedemptionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  FULFILLED
+  CANCELLED
+}
+
+enum NotificationType {
+  BADGE
+  STREAK
+  REWARD
+  LEADERBOARD
+  ANNOUNCEMENT
+  SUBSCRIPTION
+}
+
+enum PlanInterval {
+  FREE
+  MONTHLY
+  YEARLY
+  SPECIAL
+}
+
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELLED
+  EXPIRED
+}
+
+enum CouponType {
+  PERCENTAGE
+  FIXED_AMOUNT
+}
+
+enum MediaType {
+  IMAGE
+  VIDEO
+  PDF
+  AUDIO
+  OTHER
+}
+
+model RoleMaster {
+  id          BigInt   @id @default(autoincrement())
+  code        UserRole @unique
+  label       String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model User {
+  id                 BigInt          @id @default(autoincrement())
+  email              String?         @unique
+  mobile             String?         @unique
+  passwordHash       String?
+  role               UserRole
+  status             UserStatus      @default(PENDING)
+  emailVerifiedAt    DateTime?
+  mobileVerifiedAt   DateTime?
+  fullName           String
+  displayName        String?
+  avatarUrl          String?
+  lastLoginAt        DateTime?
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+  studentProfile     StudentProfile?
+  parentProfile      ParentProfile?
+  subscriptions      Subscription[]
+  notifications      Notification[]
+  activityLogs       ActivityLog[]
+  announcements      Announcement[]  @relation("AnnouncementCreatedBy")
+  quizAttempts       QuizAttempt[]
+  typingAttempts     TypingAttempt[]
+  gameAttempts       GameAttempt[]
+  rewardRedemptions  RewardRedemption[]
+  walletTransactions WalletTransaction[]
+
+  @@index([role, status])
+  @@index([createdAt])
+}
+
+model StudentProfile {
+  id                 BigInt             @id @default(autoincrement())
+  userId             BigInt             @unique
+  age                Int?
+  dateOfBirth        DateTime?
+  grade              String?
+  language           String             @default("English")
+  interests          Json?
+  totalCoins         Int                @default(0)
+  totalXp            Int                @default(0)
+  currentLevel       Int                @default(1)
+  currentStreak      Int                @default(0)
+  bestStreak         Int                @default(0)
+  onboardingDone     Boolean            @default(false)
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  user               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parents            ParentStudentMap[]
+  badges             StudentBadge[]
+  streakLogs         StreakLog[]
+  leaderboardEntries LeaderboardEntry[]
+
+  @@index([grade])
+  @@index([currentLevel])
+}
+
+model ParentProfile {
+  id                BigInt             @id @default(autoincrement())
+  userId            BigInt             @unique
+  relationshipLabel String?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  children          ParentStudentMap[]
+}
+
+model ParentStudentMap {
+  id        BigInt         @id @default(autoincrement())
+  parentId  BigInt
+  studentId BigInt
+  createdAt DateTime       @default(now())
+  parent    ParentProfile  @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  student   StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([parentId, studentId])
+  @@index([studentId])
+}
+
+model Subject {
+  id          BigInt      @id @default(autoincrement())
+  name        String      @unique
+  slug        String      @unique
+  description String?
+  isPublished Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  categories  Category[]
+  quizSets    QuizSet[]
+}
+
+model Category {
+  id          BigInt      @id @default(autoincrement())
+  subjectId   BigInt
+  name        String
+  slug        String
+  description String?
+  isPublished Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  subject     Subject     @relation(fields: [subjectId], references: [id], onDelete: Restrict)
+  quizSets    QuizSet[]
+
+  @@unique([subjectId, slug])
+  @@index([subjectId, isPublished])
+}
+
+model DifficultyLevel {
+  id            BigInt         @id @default(autoincrement())
+  name          String         @unique
+  slug          String         @unique
+  sortOrder     Int
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  quizSets      QuizSet[]
+  typingLessons TypingLesson[]
+}
+
+model QuizSet {
+  id                BigInt          @id @default(autoincrement())
+  subjectId         BigInt
+  categoryId        BigInt?
+  difficultyLevelId BigInt
+  title             String
+  slug              String          @unique
+  description       String?
+  instructions      String?
+  timeLimitSeconds  Int?
+  xpReward          Int             @default(0)
+  coinReward        Int             @default(0)
+  isPublished       Boolean         @default(false)
+  deletedAt         DateTime?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  subject           Subject         @relation(fields: [subjectId], references: [id], onDelete: Restrict)
+  category          Category?       @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  difficultyLevel   DifficultyLevel @relation(fields: [difficultyLevelId], references: [id], onDelete: Restrict)
+  questions         QuizQuestion[]
+  attempts          QuizAttempt[]
+
+  @@index([subjectId, isPublished])
+  @@index([categoryId, isPublished])
+  @@index([difficultyLevelId, isPublished])
+  @@index([deletedAt])
+}
+
+model QuizQuestion {
+  id          BigInt               @id @default(autoincrement())
+  quizSetId   BigInt
+  prompt      String
+  explanation String?
+  sortOrder   Int
+  metadata    Json?
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+  quizSet     QuizSet              @relation(fields: [quizSetId], references: [id], onDelete: Cascade)
+  options     QuizQuestionOption[]
+  answers     QuizAttemptAnswer[]
+
+  @@index([quizSetId, sortOrder])
+}
+
+model QuizQuestionOption {
+  id         BigInt       @id @default(autoincrement())
+  questionId BigInt
+  text       String
+  isCorrect  Boolean      @default(false)
+  sortOrder  Int
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  question   QuizQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@index([questionId, sortOrder])
+}
+
+model QuizAttempt {
+  id               BigInt           @id @default(autoincrement())
+  studentUserId    BigInt
+  quizSetId        BigInt
+  status           AttemptStatus    @default(IN_PROGRESS)
+  startedAt        DateTime         @default(now())
+  submittedAt      DateTime?
+  score            Decimal?         @db.Decimal(8, 2)
+  totalQuestions   Int              @default(0)
+  correctAnswers   Int              @default(0)
+  accuracy         Decimal?         @db.Decimal(5, 2)
+  timeTakenSeconds Int?
+  resultSnapshot   Json?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  student          User             @relation(fields: [studentUserId], references: [id], onDelete: Cascade)
+  quizSet          QuizSet          @relation(fields: [quizSetId], references: [id], onDelete: Restrict)
+  answers          QuizAttemptAnswer[]
+
+  @@index([studentUserId, startedAt])
+  @@index([quizSetId, status])
+}
+
+model QuizAttemptAnswer {
+  id               BigInt       @id @default(autoincrement())
+  attemptId        BigInt
+  questionId       BigInt
+  selectedOptionId BigInt?
+  isCorrect        Boolean?
+  answeredAt       DateTime     @default(now())
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+  attempt          QuizAttempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  question         QuizQuestion @relation(fields: [questionId], references: [id], onDelete: Restrict)
+
+  @@unique([attemptId, questionId])
+  @@index([questionId])
+}
+
+model TypingLesson {
+  id                BigInt           @id @default(autoincrement())
+  difficultyLevelId BigInt?
+  title             String
+  slug              String           @unique
+  bodyText          String
+  targetWpm         Int              @default(20)
+  targetAccuracy    Int              @default(90)
+  xpReward          Int              @default(0)
+  coinReward        Int              @default(0)
+  isPublished       Boolean          @default(false)
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  difficultyLevel   DifficultyLevel? @relation(fields: [difficultyLevelId], references: [id], onDelete: SetNull)
+  attempts          TypingAttempt[]
+
+  @@index([difficultyLevelId, isPublished])
+}
+
+model TypingAttempt {
+  id               BigInt        @id @default(autoincrement())
+  studentUserId    BigInt
+  lessonId         BigInt
+  status           AttemptStatus @default(IN_PROGRESS)
+  startedAt        DateTime      @default(now())
+  submittedAt      DateTime?
+  wpm              Decimal?      @db.Decimal(6, 2)
+  accuracy         Decimal?      @db.Decimal(5, 2)
+  timeTakenSeconds Int?
+  charactersTyped  Int           @default(0)
+  resultSnapshot   Json?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  student          User          @relation(fields: [studentUserId], references: [id], onDelete: Cascade)
+  lesson           TypingLesson  @relation(fields: [lessonId], references: [id], onDelete: Restrict)
+
+  @@index([studentUserId, startedAt])
+  @@index([lessonId, status])
+}
+
+model Game {
+  id          BigInt      @id @default(autoincrement())
+  title       String
+  slug        String      @unique
+  description String?
+  gameConfig  Json?
+  isPublished Boolean     @default(false)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  levels      GameLevel[]
+
+  @@index([isPublished])
+}
+
+model GameLevel {
+  id          BigInt        @id @default(autoincrement())
+  gameId      BigInt
+  title       String
+  levelNumber Int
+  config      Json?
+  xpReward    Int           @default(0)
+  coinReward  Int           @default(0)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  game        Game          @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  attempts    GameAttempt[]
+
+  @@unique([gameId, levelNumber])
+  @@index([gameId])
+}
+
+model GameAttempt {
+  id               BigInt        @id @default(autoincrement())
+  studentUserId    BigInt
+  gameLevelId      BigInt
+  status           AttemptStatus @default(IN_PROGRESS)
+  startedAt        DateTime      @default(now())
+  submittedAt      DateTime?
+  score            Decimal?      @db.Decimal(8, 2)
+  timeTakenSeconds Int?
+  resultSnapshot   Json?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  student          User          @relation(fields: [studentUserId], references: [id], onDelete: Cascade)
+  gameLevel        GameLevel     @relation(fields: [gameLevelId], references: [id], onDelete: Restrict)
+
+  @@index([studentUserId, startedAt])
+  @@index([gameLevelId, status])
+}
+
+model Badge {
+  id            BigInt        @id @default(autoincrement())
+  title         String        @unique
+  slug          String        @unique
+  description   String?
+  iconUrl       String?
+  ruleType      String
+  ruleConfig    Json?
+  isPublished   Boolean       @default(true)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  studentBadges StudentBadge[]
+
+  @@index([isPublished])
+}
+
+model StudentBadge {
+  id               BigInt         @id @default(autoincrement())
+  studentProfileId BigInt
+  badgeId          BigInt
+  awardedAt        DateTime       @default(now())
+  createdAt        DateTime       @default(now())
+  studentProfile   StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+  badge            Badge          @relation(fields: [badgeId], references: [id], onDelete: Restrict)
+
+  @@unique([studentProfileId, badgeId])
+  @@index([badgeId])
+}
+
+model WalletTransaction {
+  id           BigInt          @id @default(autoincrement())
+  userId       BigInt
+  entryType    WalletEntryType
+  direction    WalletDirection
+  reason       WalletReason
+  amount       Int
+  balanceAfter Int
+  relatedType  String?
+  relatedId    BigInt?
+  metadata     Json?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, entryType, createdAt(sort: Desc)])
+  @@index([reason, createdAt])
+}
+
+model StreakLog {
+  id               BigInt         @id @default(autoincrement())
+  studentProfileId BigInt
+  activityDate     DateTime
+  activityCount    Int            @default(1)
+  sourceModules    Json?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  studentProfile   StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+
+  @@unique([studentProfileId, activityDate])
+  @@index([activityDate])
+}
+
+model Leaderboard {
+  id          BigInt            @id @default(autoincrement())
+  module      LeaderboardModule
+  window      LeaderboardWindow
+  periodStart DateTime
+  periodEnd   DateTime
+  cacheKey    String            @unique
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  entries     LeaderboardEntry[]
+
+  @@unique([module, window, periodStart])
+  @@index([window, periodStart])
+}
+
+model LeaderboardEntry {
+  id               BigInt         @id @default(autoincrement())
+  leaderboardId    BigInt
+  studentProfileId BigInt
+  rank             Int
+  score            Decimal        @db.Decimal(10, 2)
+  snapshot         Json?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  leaderboard      Leaderboard    @relation(fields: [leaderboardId], references: [id], onDelete: Cascade)
+  studentProfile   StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+
+  @@unique([leaderboardId, studentProfileId])
+  @@index([leaderboardId, rank])
+}
+
+model Reward {
+  id               BigInt             @id @default(autoincrement())
+  title            String
+  slug             String             @unique
+  description      String?
+  coinCost         Int
+  stock            Int?
+  requiresApproval Boolean            @default(true)
+  isPublished      Boolean            @default(true)
+  deletedAt        DateTime?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  redemptions      RewardRedemption[]
+
+  @@index([isPublished, deletedAt])
+}
+
+model RewardRedemption {
+  id               BigInt           @id @default(autoincrement())
+  userId           BigInt
+  rewardId         BigInt
+  coinsDebited     Int
+  status           RedemptionStatus @default(PENDING)
+  reviewedByUserId BigInt?
+  reviewedAt       DateTime?
+  note             String?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reward           Reward           @relation(fields: [rewardId], references: [id], onDelete: Restrict)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([status, createdAt(sort: Desc)])
+}
+
+model Notification {
+  id        BigInt           @id @default(autoincrement())
+  userId    BigInt
+  type      NotificationType
+  title     String
+  body      String
+  payload   Json?
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead, createdAt(sort: Desc)])
+}
+
+model Announcement {
+  id              BigInt    @id @default(autoincrement())
+  title           String
+  body            String
+  audienceRole    UserRole?
+  isPublished     Boolean   @default(false)
+  publishedAt     DateTime?
+  createdByUserId BigInt?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  createdBy       User?     @relation("AnnouncementCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+
+  @@index([audienceRole, isPublished])
+}
+
+model Plan {
+  id            BigInt         @id @default(autoincrement())
+  name          String         @unique
+  slug          String         @unique
+  interval      PlanInterval
+  priceAmount   Decimal        @db.Decimal(10, 2)
+  currency      String         @default("INR")
+  isActive      Boolean        @default(true)
+  featureConfig Json?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  subscriptions Subscription[]
+}
+
+model Subscription {
+  id                 BigInt             @id @default(autoincrement())
+  userId             BigInt
+  planId             BigInt
+  status             SubscriptionStatus @default(TRIALING)
+  provider           String
+  providerRef        String?
+  startedAt          DateTime           @default(now())
+  currentPeriodStart DateTime?
+  currentPeriodEnd   DateTime?
+  cancelledAt        DateTime?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  user               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan               Plan               @relation(fields: [planId], references: [id], onDelete: Restrict)
+  couponRedemptions  CouponRedemption[]
+
+  @@index([userId, status])
+  @@index([planId])
+}
+
+model CouponCode {
+  id             BigInt            @id @default(autoincrement())
+  code           String            @unique
+  type           CouponType
+  value          Decimal           @db.Decimal(10, 2)
+  maxRedemptions Int?
+  redeemedCount  Int               @default(0)
+  startsAt       DateTime?
+  expiresAt      DateTime?
+  isActive       Boolean           @default(true)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  redemptions    CouponRedemption[]
+
+  @@index([isActive, expiresAt])
+}
+
+model CouponRedemption {
+  id             BigInt        @id @default(autoincrement())
+  couponId       BigInt
+  userId         BigInt
+  subscriptionId BigInt?
+  createdAt      DateTime      @default(now())
+  coupon         CouponCode    @relation(fields: [couponId], references: [id], onDelete: Cascade)
+  subscription   Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+
+  @@index([couponId])
+  @@index([userId, createdAt(sort: Desc)])
+}
+
+model ActivityLog {
+  id         BigInt   @id @default(autoincrement())
+  userId     BigInt?
+  action     String
+  entityType String
+  entityId   BigInt?
+  payload    Json?
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([entityType, entityId])
+  @@index([createdAt(sort: Desc)])
+}
+
+model Setting {
+  id        BigInt   @id @default(autoincrement())
+  key       String   @unique
+  value     Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model MediaLibrary {
+  id        BigInt    @id @default(autoincrement())
+  fileName  String
+  fileUrl   String    @unique
+  mediaType MediaType
+  mimeType  String
+  fileSize  Int
+  metadata  Json?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([mediaType, createdAt(sort: Desc)])
+}

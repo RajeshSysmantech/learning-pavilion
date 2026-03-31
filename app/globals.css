@@ -1,0 +1,23 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-brand-surface font-sans text-brand-ink antialiased;
+}
+
+a {
+  @apply transition-colors;
+}
+
+::selection {
+  @apply bg-brand-blue/15 text-brand-ink;
+}

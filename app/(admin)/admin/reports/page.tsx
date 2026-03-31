@@ -1,0 +1,2 @@
+import { AdminModulePage } from "@/components/admin/admin-module-page";
+export default function Page() { return <AdminModulePage title="Reports" description="Analyze users, activity, quiz performance, typing performance, rewards, and revenue." columns={["Report","Range","Last Updated"]} rows={[["New Users","Last 30 days","Today"],["Quiz Performance","This week","Today"],["Revenue","This month","Today"]]} />; }

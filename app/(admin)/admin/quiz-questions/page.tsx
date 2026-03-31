@@ -1,0 +1,2 @@
+import { AdminModulePage } from "@/components/admin/admin-module-page";
+export default function Page() { return <AdminModulePage title="Quiz Questions" description="Manage one-by-one questions, options, explanations, and quality checks." columns={["Question","Quiz Set","Type","Status"]} rows={[["Which fraction equals 1/2?","Math Magic - Fractions","MCQ","Published"],["Earth is known as...?","Space Science Sprint","MCQ","Draft"]]} />; }

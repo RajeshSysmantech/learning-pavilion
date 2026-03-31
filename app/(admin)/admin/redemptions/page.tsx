@@ -1,0 +1,2 @@
+import { AdminModulePage } from "@/components/admin/admin-module-page";
+export default function Page() { return <AdminModulePage title="Redemptions" description="Review redemption requests, approve or reject items, and track delivery." columns={["Student","Reward","Coins","Status"]} rows={[["Aarohi Sharma","Astronaut Pencil Kit","450","Pending"],["Siya Kapoor","Puzzle Bundle","1000","Approved"]]} />; }

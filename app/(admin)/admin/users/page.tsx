@@ -1,0 +1,2 @@
+import { AdminModulePage } from "@/components/admin/admin-module-page";
+export default function Page() { return <AdminModulePage title="Users" description="Manage all user accounts, roles, verification state, and access." columns={["Name","Role","Email","Status"]} rows={[["Aarohi Sharma","STUDENT","aarohi@example.com","Active"],["Riya Patel","PARENT","riya@example.com","Active"],["Admin Team","ADMIN","admin@example.com","Verified"]]} />; }

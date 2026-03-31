@@ -1,0 +1,2 @@
+import { AdminModulePage } from "@/components/admin/admin-module-page";
+export default function Page() { return <AdminModulePage title="Media Library" description="Manage uploaded images, documents, storage metadata, and moderation status." columns={["File","Type","Size","Status"]} rows={[["hero-banner.png","image/png","420 KB","Active"],["badge-first-quiz.svg","image/svg+xml","18 KB","Active"]]} />; }
