@@ -1,3 +1,4 @@
+import type { Route } from "next";
 import { APP_NAME, APP_TAGLINE } from "@/lib/constants";
 
 export const siteConfig = {
@@ -11,5 +12,5 @@ export const siteConfig = {
     { href: "/pricing", label: "Pricing" },
     { href: "/about", label: "About" },
     { href: "/contact", label: "Contact" }
-  ]
+  ] satisfies Array<{ href: Route; label: string }>
 };
