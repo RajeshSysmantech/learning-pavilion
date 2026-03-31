@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import type { Route } from "next";
 import { AppShell } from "@/components/layouts/app-shell";
 
 const nav = [
@@ -12,7 +13,7 @@ const nav = [
   { href: "/notifications", label: "Notifications" },
   { href: "/subscription", label: "Subscription" },
   { href: "/settings", label: "Settings" }
-];
+] satisfies Array<{ href: Route; label: string }>;
 
 export default function StudentLayout({
   children

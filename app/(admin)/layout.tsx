@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import type { Route } from "next";
 import { AppShell } from "@/components/layouts/app-shell";
 
 const nav = [
@@ -24,7 +25,7 @@ const nav = [
   { href: "/admin/reports", label: "Reports" },
   { href: "/admin/settings", label: "Settings" },
   { href: "/admin/media", label: "Media" }
-];
+] satisfies Array<{ href: Route; label: string }>;
 
 export default function AdminLayout({
   children
